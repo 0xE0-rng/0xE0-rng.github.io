@@ -58,7 +58,7 @@ echo -ne \\x00\\x64\\x00 > /dev/hidg0
 We should now see the mouse move by 10 units in the x direction on the host device.
 
 ## Introducing PatternBash
-So what can we do with this knowledge? Inspired by the **Android Pin Bruteforcing Project**[^pin-bruteforce-repo], I have created a bash script that will bruteforce the pattern lock on an Android device.
+So what can we do with this knowledge? Inspired by the *Android Pin Bruteforcing Project*[^pin-bruteforce-repo], I have created a bash script that will bruteforce the pattern lock on an Android device. I called it **PatternBash** and it is available on its dedicated repo here [^patternbash-repo].
 
 The problem with bruteforcing is the timeout between failed attempts grows exponentially. However, for the tablet in question (and many other devices), we can actually factory reset the device again, which will reset the timeout every time we do.
 This is an issue that in a different form also existed on iPhones, which made bruteforcing PINs feasible for a while there too[^iphone-brute].
@@ -116,6 +116,7 @@ Raspbian actually also has **ConfigFS** support, so my script can be run on a Ra
 [^frp-bypass]: [Riskeco: Analysis of a Samsung FRP Bypass](https://blog-cyber.riskeco.com/en/analysis-of-samsung-frp-bypass/)
 [^pattern-frequency]: [Loge, Marte et al: On User Choice for Android Unlock Patterns](https://web.archive.org/web/20230527233502/http://www.usablesecurity.net/USEC/NDSS/wp-content/uploads/2018/03/01-on-user-choice-for-android-unlock-patterns.pdf)
 [^pin-bruteforce-repo]: [The Android PIN Bruteforce Github Repo](https://github.com/urbanadventurer/Android-PIN-Bruteforce)
+[^patternbash-repo]: [PatternBash Github Repo](https://github.com/0xE0-rng/PatternBash)
 [^usb-gadget-tool]: [Android USB Gadget Github Repo](https://github.com/tejado/android-usb-gadget)
 [^all-pattern-repo]: [My AndroidPatternLock Fork](https://github.com/0xE0-rng/AndroidPatternLock/tree/50eac641818bfb03b1a102c39b4e3c71dafac1bd)
 [^kernel-gadget-api]: [kernel.org USB Gadget Driver Documentation](https://www.kernel.org/doc/html/v5.0/driver-api/usb/gadget.html)
