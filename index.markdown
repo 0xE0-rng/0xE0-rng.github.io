@@ -1,5 +1,5 @@
 ---
 layout: home
-published: false
+published: true
 ---
-Welcome Home :)
+Welcome to my mini blog :) 
