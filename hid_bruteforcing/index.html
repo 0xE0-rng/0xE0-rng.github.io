@@ -1,0 +1,552 @@
+<!doctype html>
+<!--
+  This Pages design is based on thhe Minimal Mistakes Jekyll Theme 4.24.0 by Michael Rose - mademistakes.com | @mmistakes
+-->
+<html lang="en" class="no-js">
+  <head>
+    <meta charset="utf-8">
+
+<!-- begin _includes/seo.html --><title>Bruteforcing Android Patterns Using HID Devices - A Glorified Notebook</title>
+<meta name="description" content="Unfortunately, my aunt died recently and left behind a perfectly good Samsung Galaxy S7 FE tablet. Unfortunately (or fortunately for you, the interested reader), we did not know the password for the device, which left us with one option: Factory Reset.">
+
+
+  <meta name="author" content="0xE0_rng">
+  
+  <meta property="article:author" content="0xE0_rng">
+  
+
+
+<meta property="og:type" content="article">
+<meta property="og:locale" content="en_US">
+<meta property="og:site_name" content="A Glorified Notebook">
+<meta property="og:title" content="Bruteforcing Android Patterns Using HID Devices">
+<meta property="og:url" content="https://0xe-rng.net/hid_bruteforcing/">
+
+
+  <meta property="og:description" content="Unfortunately, my aunt died recently and left behind a perfectly good Samsung Galaxy S7 FE tablet. Unfortunately (or fortunately for you, the interested reader), we did not know the password for the device, which left us with one option: Factory Reset.">
+
+
+
+
+
+  <meta name="twitter:site" content="@0xE-rng">
+  <meta name="twitter:title" content="Bruteforcing Android Patterns Using HID Devices">
+  <meta name="twitter:description" content="Unfortunately, my aunt died recently and left behind a perfectly good Samsung Galaxy S7 FE tablet. Unfortunately (or fortunately for you, the interested reader), we did not know the password for the device, which left us with one option: Factory Reset.">
+  <meta name="twitter:url" content="https://0xe-rng.net/hid_bruteforcing/">
+
+  
+    <meta name="twitter:card" content="summary">
+    
+  
+
+  
+
+
+
+  <meta property="article:published_time" content="2023-05-25T00:00:00+00:00">
+
+
+
+
+
+
+<link rel="canonical" href="https://0xe-rng.net/hid_bruteforcing/">
+
+
+
+
+
+
+
+
+
+
+
+
+<!-- end _includes/seo.html -->
+
+
+
+  <link href="/feed.xml" type="application/atom+xml" rel="alternate" title="A Glorified Notebook Feed">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<script>
+  document.documentElement.className = document.documentElement.className.replace(/\bno-js\b/g, '') + ' js ';
+  
+</script>
+
+<!-- For all browsers -->
+<link rel="stylesheet" href="/assets/css/main.css">
+<link rel="preload" href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@latest/css/all.min.css" as="style" onload="this.onload=null;this.rel='stylesheet'">
+<noscript><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@latest/css/all.min.css"></noscript>
+
+
+
+    <!-- start custom head snippets -->
+
+<!-- insert favicons. use https://realfavicongenerator.net/ -->
+
+<!-- end custom head snippets -->
+
+  </head>
+
+  <body class="layout--single">
+    <nav class="skip-links">
+  <ul>
+    <li><a href="#site-nav" class="screen-reader-shortcut">Skip to primary navigation</a></li>
+    <li><a href="#main" class="screen-reader-shortcut">Skip to content</a></li>
+    <li><a href="#footer" class="screen-reader-shortcut">Skip to footer</a></li>
+  </ul>
+</nav>
+
+    
+
+<div class="masthead">
+  <div class="masthead__inner-wrap">
+    <div class="masthead__menu">
+      <nav id="site-nav" class="greedy-nav">
+        
+        <a class="site-title" href="/">
+          A Glorified Notebook
+          
+        </a>
+        <ul class="visible-links"><li class="masthead__menu-item">
+              <a
+                href="/about/"
+                
+                
+              >About Me</a>
+            </li><li class="masthead__menu-item">
+              <a
+                href="/posts/"
+                
+                
+              >Posts</a>
+            </li><li class="masthead__menu-item">
+              <a
+                href="/tags/"
+                
+                
+              >Tags</a>
+            </li></ul>
+        
+        <button class="greedy-nav__toggle hidden" type="button">
+          <span class="visually-hidden">Toggle menu</span>
+          <div class="navicon"></div>
+        </button>
+        <ul class="hidden-links hidden"></ul>
+      </nav>
+    </div>
+  </div>
+</div>
+
+
+    <div class="initial-content">
+      
+
+
+
+
+
+<div id="main" role="main">
+  
+  <div class="sidebar sticky">
+  
+
+
+<div itemscope itemtype="https://schema.org/Person" class="h-card">
+
+  
+    <div class="author__avatar">
+      <a href="https://0xe-rng.net/">
+        <img src="https://pbs.twimg.com/profile_images/1308809371124731904/wDMEkIs1_400x400.jpg" alt="0xE0_rng" itemprop="image" class="u-photo">
+      </a>
+    </div>
+  
+
+  <div class="author__content">
+    <h3 class="author__name p-name" itemprop="name">
+      <a class="u-url" rel="me" href="https://0xe-rng.net/" itemprop="url">0xE0_rng</a>
+    </h3>
+    
+  </div>
+
+  <div class="author__urls-wrapper">
+    <button class="btn btn--inverse">Follow</button>
+    <ul class="author__urls social-icons">
+      
+        <li itemprop="homeLocation" itemscope itemtype="https://schema.org/Place">
+          <i class="fas fa-fw fa-map-marker-alt" aria-hidden="true"></i> <span itemprop="name" class="p-locality">London, UK</span>
+        </li>
+      
+
+      
+        
+          
+            <li><a href="https://infosec.exchange/@0xE0_rng" rel="nofollow noopener noreferrer me" itemprop="sameAs"><i class="fab fa-fw fa-brands fa-mastodon" aria-hidden="true"></i><span class="label">Mastodon</span></a></li>
+          
+        
+          
+            <li><a href="https://twitter.com/0xE0_rng" rel="nofollow noopener noreferrer me" itemprop="sameAs"><i class="fab fa-fw fa-twitter-square" aria-hidden="true"></i><span class="label">Twitter</span></a></li>
+          
+        
+          
+            <li><a href="https://github.com/0xE0-rng" rel="nofollow noopener noreferrer me" itemprop="sameAs"><i class="fab fa-fw fa-github" aria-hidden="true"></i><span class="label">GitHub</span></a></li>
+          
+        
+      
+
+      
+
+      
+
+      
+
+      
+
+      
+
+      
+
+      
+
+      
+
+      
+
+      
+
+      
+
+      
+
+      
+
+      
+
+      
+
+      
+
+      
+
+      
+
+      
+
+      
+
+      
+
+      
+
+      
+
+      
+
+      <!--
+  <li>
+    <a href="http://link-to-whatever-social-network.com/user/" itemprop="sameAs" rel="nofollow noopener noreferrer me">
+      <i class="fas fa-fw" aria-hidden="true"></i> Custom Social Profile Link
+    </a>
+  </li>
+-->
+    </ul>
+  </div>
+</div>
+
+  
+  </div>
+
+
+  <article class="page h-entry" itemscope itemtype="https://schema.org/CreativeWork">
+    <meta itemprop="headline" content="Bruteforcing Android Patterns Using HID Devices">
+    <meta itemprop="description" content="Unfortunately, my aunt died recently and left behind a perfectly good Samsung Galaxy S7 FE tablet. Unfortunately (or fortunately for you, the interested reader), we did not know the password for the device, which left us with one option: Factory Reset.">
+    <meta itemprop="datePublished" content="2023-05-25T00:00:00+00:00">
+    
+
+    <div class="page__inner-wrap">
+      
+        <header>
+          <h1 id="page-title" class="page__title p-name" itemprop="headline">
+            <a href="https://0xe-rng.net/hid_bruteforcing/" class="u-url" itemprop="url">Bruteforcing Android Patterns Using HID Devices
+</a>
+          </h1>
+          
+
+  <p class="page__meta">
+    
+
+    
+
+    
+      
+      
+
+      <span class="page__meta-readtime">
+        <i class="far fa-clock" aria-hidden="true"></i>
+        
+          6 minute read
+        
+      </span>
+    
+  </p>
+
+
+        </header>
+      
+
+      <section class="page__content e-content" itemprop="text">
+        
+          <aside class="sidebar__right sticky">
+            <nav class="toc">
+              <header>
+                
+              </header>
+              <ul class="toc__menu"><li><a href="#the-easy-way">The Easy Way</a></li><li><a href="#human-interface-devices--requirements-on-linux">Human Interface Devices / Requirements on Linux</a><ul><li><a href="#hid-gadget-on-android-and-interacting-with-the-gadget">HID Gadget on Android and interacting with the gadget</a></li></ul></li><li><a href="#introducing-patternbash">Introducing PatternBash</a><ul><li><a href="#features">Features</a></li><li><a href="#challenges-and-known-issues">Challenges and Known Issues</a><ul><li><a href="#skipping-inputs">Skipping Inputs</a></li><li><a href="#mouse-positioning">Mouse Positioning</a></li><li><a href="#pathfinding">Pathfinding</a></li><li><a href="#random-phone-resets">Random Phone Resets</a></li><li><a href="#feedback-limitations">Feedback Limitations</a></li></ul></li><li><a href="#future-work">Future Work</a></li></ul></li><li><a href="#sources">Sources</a></li></ul>
+            </nav>
+          </aside>
+        
+        <p>Unfortunately, my aunt died recently and left behind a perfectly good <strong>Samsung Galaxy S7 FE</strong> tablet. Unfortunately (or fortunately for you, the interested reader), we did not know the password for the device, which left us with one option: Factory Reset.</p>
+
+<p>Sadly, all modern Android devices employ a feature Google calls <strong>FRP</strong> (Factory Reset Protection), which requires us to either:</p>
+<ul>
+  <li>Enter the correct PIN / the correct Pattern</li>
+  <li>or sign in with the connected Google Account.</li>
+</ul>
+
+<p>Neither of those were available to me, so I had to find another solution:</p>
+
+<h2 id="the-easy-way">The Easy Way</h2>
+<p>Before going into the main topic of this blog post, I want to point out that there are much easier ways to perform what I did. There are still many different FRP bypasses available, and we might find a working one if searching for a while.
+For this specific device and many others, Samsung was nice enough to add a small backdoor in their baseband which can be used to enable adb and use it to uninstall the app responsible for FRP. The flow goes something like this:</p>
+<ul>
+  <li>Open the Dialer (e.g. through some talkback trickery)</li>
+  <li>enter <code class="language-plaintext highlighter-rouge">*#0*#</code> in the Dialer to open the Samsung debug menu, which connects the phone’s modem in serial mode to a USB-connected computer</li>
+  <li>use specific AT commands to communicate with the modem and enable USB debugging</li>
+  <li>we can then use the ADB shell to finish the setup manually (bypass FRP)</li>
+</ul>
+
+<p>For more about this, I recommend this riskeco.com blog post: <sup id="fnref:frp-bypass"><a href="#fn:frp-bypass" class="footnote" rel="footnote" role="doc-noteref">1</a></sup>. Note that for the tablet in question, another AT code than the one described in this blog might be needed.</p>
+
+<h2 id="human-interface-devices--requirements-on-linux">Human Interface Devices / Requirements on Linux</h2>
+<p>Human Interface Devices (HID) is a standard that devices can follow to communicate with your operating system to exchange information.
+Without getting too deep into it <sup id="fnref:hid-specs"><a href="#fn:hid-specs" class="footnote" rel="footnote" role="doc-noteref">2</a></sup>, the HID standard gives a common protocol for input devices.
+Among others, this protocol is implemented by mice, keyboards or similar input devices.</p>
+
+<p>At this point, I should mention that HID is already well known for malicious use cases known as HID-based attacks. Rubber Ducky is probably the most famous hardware device to inject keystrokes, and a 1 Euro ATTiny85 can replicate the same kind of attacks.</p>
+
+<p>The Linux kernel provides the ability to emulate such a HID device using the <strong>HID Gadget Driver</strong> <sup id="fnref:hid-gadget-driver"><a href="#fn:hid-gadget-driver" class="footnote" rel="footnote" role="doc-noteref">3</a></sup>.
+Those gadget drivers can be enabled using the <strong>configFS</strong> kernel feature Linux provides. ConfigFS support must be enabled in the kernel, which has to be done at kernel build time.
+For an example on Linux on how to set up a HID device, check out this repo <sup id="fnref:hid-sample"><a href="#fn:hid-sample" class="footnote" rel="footnote" role="doc-noteref">4</a></sup>.
+Some further reading on the USB Gadget API<sup id="fnref:kernel-gadget-api"><a href="#fn:kernel-gadget-api" class="footnote" rel="footnote" role="doc-noteref">5</a></sup>.</p>
+
+<h3 id="hid-gadget-on-android-and-interacting-with-the-gadget">HID Gadget on Android and interacting with the gadget</h3>
+<p>On Android, configFS is enabled on most custom ROMs (e.g. LineageOS). For the configuration of the HID devices there is an app called <strong>USB Gadget Tool</strong><sup id="fnref:usb-gadget-tool"><a href="#fn:usb-gadget-tool" class="footnote" rel="footnote" role="doc-noteref">6</a></sup> which makes configuring HID devices easier.</p>
+
+<p>Once a HID gadget device is created and enabled, the <code class="language-plaintext highlighter-rouge">/dev/hidg0</code> device is available which we can use to write to connected HID devices.</p>
+
+<p>The format to communicate with the HID Gadget is as follows:
+We send three bytes</p>
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>byte0 = 0x00 | 0x01 | 0x02 | 0x04  # to press no button, button 1, button 2 or 3
+byte1 = deltaX                     # movement as a char with possible values between -256 and +255
+byte2 = deltaY                     # y movement  -"-
+</code></pre></div></div>
+<p>Typical values for <code class="language-plaintext highlighter-rouge">deltaX</code> and <code class="language-plaintext highlighter-rouge">deltaY</code> are 1 or 2 for slow movement and 20 for very fast movement.</p>
+
+<p>So after connecting our attacking Android device to a host device, we can test the HID gadget and write to the newly added device like so:</p>
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>echo -ne \\x00\\x64\\x00 &gt; /dev/hidg0
+</code></pre></div></div>
+<p>We should now see the mouse move by 10 units in the x direction on the host device.</p>
+
+<h2 id="introducing-patternbash">Introducing PatternBash</h2>
+<p>So what can we do with this knowledge? Inspired by the <strong>Android Pin Bruteforcing Project</strong><sup id="fnref:pin-bruteforce-repo"><a href="#fn:pin-bruteforce-repo" class="footnote" rel="footnote" role="doc-noteref">7</a></sup>, I have created a bash script that will bruteforce the pattern lock on an Android device.</p>
+
+<p>The problem with bruteforcing is the timeout between failed attempts grows exponentially. However, for the tablet in question (and many other devices), we can actually factory reset the device again, which will reset the timeout every time we do.
+This is an issue that in a different form also existed on iPhones, which made bruteforcing PINs feasible for a while there too<sup id="fnref:iphone-brute"><a href="#fn:iphone-brute" class="footnote" rel="footnote" role="doc-noteref">8</a></sup>.</p>
+
+<h3 id="features">Features</h3>
+<p>PatternBash tool has the following features:</p>
+<ul>
+  <li>A resume function that allows you to pick up between attempts</li>
+  <li>A list of Android patterns based on the distance between the pattern points, which is available here on its dedicated repo on GitHub <sup id="fnref:all-pattern-repo"><a href="#fn:all-pattern-repo" class="footnote" rel="footnote" role="doc-noteref">9</a></sup></li>
+  <li>A tool to create optimized bruteforce patterns based on the paper <sup id="fnref:pattern-frequency"><a href="#fn:pattern-frequency" class="footnote" rel="footnote" role="doc-noteref">10</a></sup></li>
+  <li>An installer script to just push and run the APK</li>
+  <li>A usage menu to set up the location of the dots on the screen</li>
+  <li>A backup and resume feature to pause the bruteforcing</li>
+  <li>Auto backup of the current progress</li>
+</ul>
+
+<h3 id="challenges-and-known-issues">Challenges and Known Issues</h3>
+<p>When writing PatternBash, I came across a couple of challenges which I will describe in the following.</p>
+
+<h4 id="skipping-inputs">Skipping Inputs</h4>
+<p>I have realized that sometimes the device skips over certain HID inputs, which throws off the whole coordinates. I investigated this issue a lot and actually rewrote the tool to use the HID gadget binary provided by the Linux team instead of direct bash-to-device communication.
+Unfortunately, this was also unsuccessful, so my only fix was to go slower and limit the inputs.</p>
+
+<h4 id="mouse-positioning">Mouse Positioning</h4>
+<p>There is actually no way to know where the mouse is currently located on the device. The solution to work around this is to move the mouse to the very top left and call this location (0,0). From there on out, we can access different locations using coordinates.</p>
+
+<h4 id="pathfinding">Pathfinding</h4>
+<p>To move the mouse between points, we need pathfinding. Because this isn’t trivial in bash, I implemented a simple approach:</p>
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>    <span class="k">while</span> <span class="o">[</span> <span class="s2">"</span><span class="nv">$CURRENT_X</span><span class="s2">"</span> <span class="nt">-ne</span> <span class="s2">"</span><span class="nv">$JUMP_X</span><span class="s2">"</span> <span class="o">]</span> <span class="o">||</span> <span class="o">[</span> <span class="s2">"</span><span class="nv">$CURRENT_Y</span><span class="s2">"</span> <span class="nt">-ne</span> <span class="s2">"</span><span class="nv">$JUMP_Y</span><span class="s2">"</span> <span class="o">]</span><span class="p">;</span> <span class="k">do
+        if</span> <span class="o">[[</span> <span class="nv">$CURRENT_X</span> <span class="nt">-lt</span> <span class="nv">$JUMP_X</span> <span class="o">]]</span><span class="p">;</span> <span class="k">then
+            </span>move_right <span class="nv">$MOVE_DISTANCE</span>
+        <span class="k">fi
+        if</span> <span class="o">[[</span> <span class="nv">$CURRENT_X</span> <span class="nt">-gt</span> <span class="nv">$JUMP_X</span> <span class="o">]]</span><span class="p">;</span> <span class="k">then
+            </span>move_left <span class="nv">$MOVE_DISTANCE</span>
+        <span class="k">fi
+        if</span> <span class="o">[[</span> <span class="nv">$CURRENT_Y</span> <span class="nt">-lt</span> <span class="nv">$JUMP_Y</span> <span class="o">]]</span><span class="p">;</span> <span class="k">then
+            </span>move_down <span class="nv">$MOVE_DISTANCE</span>
+        <span class="k">fi
+        if</span> <span class="o">[[</span> <span class="nv">$CURRENT_Y</span> <span class="nt">-gt</span> <span class="nv">$JUMP_Y</span> <span class="o">]]</span><span class="p">;</span> <span class="k">then
+            </span>move_up <span class="nv">$MOVE_DISTANCE</span>
+        <span class="k">fi
+    done</span>
+</code></pre></div></div>
+<p>This works but breaks for complex patterns like connecting 1 and 8, potentially touching other points.</p>
+
+<h4 id="random-phone-resets">Random Phone Resets</h4>
+<p>Some devices reboot during bruteforcing. My tool handles this by pausing at a set attempt count using the <code class="language-plaintext highlighter-rouge">SHUTDOWN_AT</code> variable.</p>
+
+<h4 id="feedback-limitations">Feedback Limitations</h4>
+<p>We can’t get feedback through HID alone to know when we’ve succeeded. Existing products use a sensor taped onto the device to measure brightness. Other solutions would be to just film the device or create a picture after each attempt and process the image.</p>
+
+<h3 id="future-work">Future Work</h3>
+<p>Raspbian actually also has <strong>ConfigFS</strong> support, so my script can be run on a Raspberry Pi. This same Raspberry Pi can be used to drive stepper motors that automatically perform a factory reset on the device. I have experimented on this but did not create a running prototype. Maybe in another blog post…</p>
+
+<h2 id="sources">Sources</h2>
+<div class="footnotes" role="doc-endnotes">
+  <ol>
+    <li id="fn:frp-bypass">
+      <p><a href="https://blog-cyber.riskeco.com/en/analysis-of-samsung-frp-bypass/">Riskeco: Analysis of a Samsung FRP Bypass</a> <a href="#fnref:frp-bypass" class="reversefootnote" role="doc-backlink">&#8617;</a></p>
+    </li>
+    <li id="fn:hid-specs">
+      <p><a href="https://usb.org/sites/default/files/hut1_4.pdf">usb.org HID Protocol Specification</a> <a href="#fnref:hid-specs" class="reversefootnote" role="doc-backlink">&#8617;</a></p>
+    </li>
+    <li id="fn:hid-gadget-driver">
+      <p><a href="https://www.kernel.org/doc/html/latest/usb/gadget_hid.html">kernel.org HID Gadget Documentation</a> <a href="#fnref:hid-gadget-driver" class="reversefootnote" role="doc-backlink">&#8617;</a></p>
+    </li>
+    <li id="fn:hid-sample">
+      <p><a href="https://github.com/qlyoung/keyboard-gadget/blob/master/gadget-setup.sh">HID Keyboard Gadget Sample by dlyoung</a> <a href="#fnref:hid-sample" class="reversefootnote" role="doc-backlink">&#8617;</a></p>
+    </li>
+    <li id="fn:kernel-gadget-api">
+      <p><a href="https://www.kernel.org/doc/html/v5.0/driver-api/usb/gadget.html">kernel.org USB Gadget Driver Documentation</a> <a href="#fnref:kernel-gadget-api" class="reversefootnote" role="doc-backlink">&#8617;</a></p>
+    </li>
+    <li id="fn:usb-gadget-tool">
+      <p><a href="https://github.com/tejado/android-usb-gadget">Android USB Gadget Github Repo</a> <a href="#fnref:usb-gadget-tool" class="reversefootnote" role="doc-backlink">&#8617;</a></p>
+    </li>
+    <li id="fn:pin-bruteforce-repo">
+      <p><a href="https://github.com/urbanadventurer/Android-PIN-Bruteforce">The Android PIN Bruteforce Github Repo</a> <a href="#fnref:pin-bruteforce-repo" class="reversefootnote" role="doc-backlink">&#8617;</a></p>
+    </li>
+    <li id="fn:iphone-brute">
+      <p><a href="https://cve.mitre.org/cgi-bin/cvename.cgi?name=CVE-2014-4451">Mitre CVE-2014-4451</a> <a href="#fnref:iphone-brute" class="reversefootnote" role="doc-backlink">&#8617;</a></p>
+    </li>
+    <li id="fn:all-pattern-repo">
+      <p><a href="https://github.com/0xE0-rng/AndroidPatternLock/tree/50eac641818bfb03b1a102c39b4e3c71dafac1bd">My AndroidPatternLock Fork</a> <a href="#fnref:all-pattern-repo" class="reversefootnote" role="doc-backlink">&#8617;</a></p>
+    </li>
+    <li id="fn:pattern-frequency">
+      <p><a href="https://web.archive.org/web/20230527233502/http://www.usablesecurity.net/USEC/NDSS/wp-content/uploads/2018/03/01-on-user-choice-for-android-unlock-patterns.pdf">Loge, Marte et al: On User Choice for Android Unlock Patterns</a> <a href="#fnref:pattern-frequency" class="reversefootnote" role="doc-backlink">&#8617;</a></p>
+    </li>
+  </ol>
+</div>
+
+        
+      </section>
+
+      <footer class="page__meta">
+        
+        
+
+
+        
+
+  <p class="page__date"><strong><i class="fas fa-fw fa-calendar-alt" aria-hidden="true"></i> Updated:</strong> <time class="dt-published" datetime="2023-05-25T00:00:00+00:00">May 25, 2023</time></p>
+
+      </footer>
+
+      <section class="page__share">
+  
+    <h4 class="page__share-title">Share on</h4>
+  
+
+  <a href="https://twitter.com/intent/tweet?via=0xE-rng&text=Bruteforcing+Android+Patterns+Using+HID+Devices%20https%3A%2F%2F0xe-rng.net%2Fhid_bruteforcing%2F" class="btn btn--twitter" onclick="window.open(this.href, 'window', 'left=20,top=20,width=500,height=500,toolbar=1,resizable=0'); return false;" title="Share on Twitter"><i class="fab fa-fw fa-twitter" aria-hidden="true"></i><span> Twitter</span></a>
+
+  <!-- <a href="https://www.facebook.com/sharer/sharer.php?u=https%3A%2F%2F0xe-rng.net%2Fhid_bruteforcing%2F" class="btn btn--facebook" onclick="window.open(this.href, 'window', 'left=20,top=20,width=500,height=500,toolbar=1,resizable=0'); return false;" title="Share on Facebook"><i class="fab fa-fw fa-facebook" aria-hidden="true"></i><span> Facebook</span></a> -->
+
+  <!-- <a href="https://www.linkedin.com/shareArticle?mini=true&url=https%3A%2F%2F0xe-rng.net%2Fhid_bruteforcing%2F" class="btn btn--linkedin" onclick="window.open(this.href, 'window', 'left=20,top=20,width=500,height=500,toolbar=1,resizable=0'); return false;" title="Share on LinkedIn"><i class="fab fa-fw fa-linkedin" aria-hidden="true"></i><span> LinkedIn</span></a> -->
+</section>
+
+
+      
+
+    </div>
+
+    
+  </article>
+
+  
+  
+    <div class="page__related">
+      <h2 class="page__related-title">You may also enjoy</h2>
+      <div class="grid__wrapper">
+        
+          
+            
+      </div>
+    </div>
+  
+</div>
+
+    </div>
+
+    
+
+    <div id="footer" class="page__footer">
+      <footer>
+        <!-- start custom footer snippets -->
+
+<!-- end custom footer snippets -->
+        <div class="page__footer-follow">
+  <ul class="social-icons">
+    
+      <li><strong>Follow:</strong></li>
+    
+
+    
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    
+
+    
+      <li><a href="/feed.xml"><i class="fas fa-fw fa-rss-square" aria-hidden="true"></i> Feed</a></li>
+    
+  </ul>
+</div>
+
+<!-- <div class="page__footer-copyright">&copy; 2025 Your Name. Powered by <a href="https://jekyllrb.com" rel="nofollow">Jekyll</a> &amp; <a href="https://mademistakes.com/work/minimal-mistakes-jekyll-theme/" rel="nofollow">Minimal Mistakes</a>.</div> -->
+
+      </footer>
+    </div>
+
+    
+  <script src="/assets/js/main.min.js"></script>
+
+
+
+
+
+
+
+
+
+
+  </body>
+</html>

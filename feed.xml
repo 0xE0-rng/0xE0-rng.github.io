@@ -1,0 +1,143 @@
+<?xml version="1.0" encoding="utf-8"?><feed xmlns="http://www.w3.org/2005/Atom" ><generator uri="https://jekyllrb.com/" version="4.3.4">Jekyll</generator><link href="https://0xe-rng.net/feed.xml" rel="self" type="application/atom+xml" /><link href="https://0xe-rng.net/" rel="alternate" type="text/html" /><updated>2025-07-15T19:59:59+00:00</updated><id>https://0xe-rng.net/feed.xml</id><title type="html">A Glorified Notebook</title><subtitle>A blog on security topics</subtitle><author><name>0xE0_rng</name></author><entry><title type="html">Bruteforcing Android Patterns Using HID Devices</title><link href="https://0xe-rng.net/hid_bruteforcing/" rel="alternate" type="text/html" title="Bruteforcing Android Patterns Using HID Devices" /><published>2023-05-25T00:00:00+00:00</published><updated>2023-05-25T00:00:00+00:00</updated><id>https://0xe-rng.net/hid_bruteforcing</id><content type="html" xml:base="https://0xe-rng.net/hid_bruteforcing/"><![CDATA[<p>Unfortunately, my aunt died recently and left behind a perfectly good <strong>Samsung Galaxy S7 FE</strong> tablet. Unfortunately (or fortunately for you, the interested reader), we did not know the password for the device, which left us with one option: Factory Reset.</p>
+
+<p>Sadly, all modern Android devices employ a feature Google calls <strong>FRP</strong> (Factory Reset Protection), which requires us to either:</p>
+<ul>
+  <li>Enter the correct PIN / the correct Pattern</li>
+  <li>or sign in with the connected Google Account.</li>
+</ul>
+
+<p>Neither of those were available to me, so I had to find another solution:</p>
+
+<h2 id="the-easy-way">The Easy Way</h2>
+<p>Before going into the main topic of this blog post, I want to point out that there are much easier ways to perform what I did. There are still many different FRP bypasses available, and we might find a working one if searching for a while.
+For this specific device and many others, Samsung was nice enough to add a small backdoor in their baseband which can be used to enable adb and use it to uninstall the app responsible for FRP. The flow goes something like this:</p>
+<ul>
+  <li>Open the Dialer (e.g. through some talkback trickery)</li>
+  <li>enter <code class="language-plaintext highlighter-rouge">*#0*#</code> in the Dialer to open the Samsung debug menu, which connects the phone’s modem in serial mode to a USB-connected computer</li>
+  <li>use specific AT commands to communicate with the modem and enable USB debugging</li>
+  <li>we can then use the ADB shell to finish the setup manually (bypass FRP)</li>
+</ul>
+
+<p>For more about this, I recommend this riskeco.com blog post: <sup id="fnref:frp-bypass"><a href="#fn:frp-bypass" class="footnote" rel="footnote" role="doc-noteref">1</a></sup>. Note that for the tablet in question, another AT code than the one described in this blog might be needed.</p>
+
+<h2 id="human-interface-devices--requirements-on-linux">Human Interface Devices / Requirements on Linux</h2>
+<p>Human Interface Devices (HID) is a standard that devices can follow to communicate with your operating system to exchange information.
+Without getting too deep into it <sup id="fnref:hid-specs"><a href="#fn:hid-specs" class="footnote" rel="footnote" role="doc-noteref">2</a></sup>, the HID standard gives a common protocol for input devices.
+Among others, this protocol is implemented by mice, keyboards or similar input devices.</p>
+
+<p>At this point, I should mention that HID is already well known for malicious use cases known as HID-based attacks. Rubber Ducky is probably the most famous hardware device to inject keystrokes, and a 1 Euro ATTiny85 can replicate the same kind of attacks.</p>
+
+<p>The Linux kernel provides the ability to emulate such a HID device using the <strong>HID Gadget Driver</strong> <sup id="fnref:hid-gadget-driver"><a href="#fn:hid-gadget-driver" class="footnote" rel="footnote" role="doc-noteref">3</a></sup>.
+Those gadget drivers can be enabled using the <strong>configFS</strong> kernel feature Linux provides. ConfigFS support must be enabled in the kernel, which has to be done at kernel build time.
+For an example on Linux on how to set up a HID device, check out this repo <sup id="fnref:hid-sample"><a href="#fn:hid-sample" class="footnote" rel="footnote" role="doc-noteref">4</a></sup>.
+Some further reading on the USB Gadget API<sup id="fnref:kernel-gadget-api"><a href="#fn:kernel-gadget-api" class="footnote" rel="footnote" role="doc-noteref">5</a></sup>.</p>
+
+<h3 id="hid-gadget-on-android-and-interacting-with-the-gadget">HID Gadget on Android and interacting with the gadget</h3>
+<p>On Android, configFS is enabled on most custom ROMs (e.g. LineageOS). For the configuration of the HID devices there is an app called <strong>USB Gadget Tool</strong><sup id="fnref:usb-gadget-tool"><a href="#fn:usb-gadget-tool" class="footnote" rel="footnote" role="doc-noteref">6</a></sup> which makes configuring HID devices easier.</p>
+
+<p>Once a HID gadget device is created and enabled, the <code class="language-plaintext highlighter-rouge">/dev/hidg0</code> device is available which we can use to write to connected HID devices.</p>
+
+<p>The format to communicate with the HID Gadget is as follows:
+We send three bytes</p>
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>byte0 = 0x00 | 0x01 | 0x02 | 0x04  # to press no button, button 1, button 2 or 3
+byte1 = deltaX                     # movement as a char with possible values between -256 and +255
+byte2 = deltaY                     # y movement  -"-
+</code></pre></div></div>
+<p>Typical values for <code class="language-plaintext highlighter-rouge">deltaX</code> and <code class="language-plaintext highlighter-rouge">deltaY</code> are 1 or 2 for slow movement and 20 for very fast movement.</p>
+
+<p>So after connecting our attacking Android device to a host device, we can test the HID gadget and write to the newly added device like so:</p>
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>echo -ne \\x00\\x64\\x00 &gt; /dev/hidg0
+</code></pre></div></div>
+<p>We should now see the mouse move by 10 units in the x direction on the host device.</p>
+
+<h2 id="introducing-patternbash">Introducing PatternBash</h2>
+<p>So what can we do with this knowledge? Inspired by the <strong>Android Pin Bruteforcing Project</strong><sup id="fnref:pin-bruteforce-repo"><a href="#fn:pin-bruteforce-repo" class="footnote" rel="footnote" role="doc-noteref">7</a></sup>, I have created a bash script that will bruteforce the pattern lock on an Android device.</p>
+
+<p>The problem with bruteforcing is the timeout between failed attempts grows exponentially. However, for the tablet in question (and many other devices), we can actually factory reset the device again, which will reset the timeout every time we do.
+This is an issue that in a different form also existed on iPhones, which made bruteforcing PINs feasible for a while there too<sup id="fnref:iphone-brute"><a href="#fn:iphone-brute" class="footnote" rel="footnote" role="doc-noteref">8</a></sup>.</p>
+
+<h3 id="features">Features</h3>
+<p>PatternBash tool has the following features:</p>
+<ul>
+  <li>A resume function that allows you to pick up between attempts</li>
+  <li>A list of Android patterns based on the distance between the pattern points, which is available here on its dedicated repo on GitHub <sup id="fnref:all-pattern-repo"><a href="#fn:all-pattern-repo" class="footnote" rel="footnote" role="doc-noteref">9</a></sup></li>
+  <li>A tool to create optimized bruteforce patterns based on the paper <sup id="fnref:pattern-frequency"><a href="#fn:pattern-frequency" class="footnote" rel="footnote" role="doc-noteref">10</a></sup></li>
+  <li>An installer script to just push and run the APK</li>
+  <li>A usage menu to set up the location of the dots on the screen</li>
+  <li>A backup and resume feature to pause the bruteforcing</li>
+  <li>Auto backup of the current progress</li>
+</ul>
+
+<h3 id="challenges-and-known-issues">Challenges and Known Issues</h3>
+<p>When writing PatternBash, I came across a couple of challenges which I will describe in the following.</p>
+
+<h4 id="skipping-inputs">Skipping Inputs</h4>
+<p>I have realized that sometimes the device skips over certain HID inputs, which throws off the whole coordinates. I investigated this issue a lot and actually rewrote the tool to use the HID gadget binary provided by the Linux team instead of direct bash-to-device communication.
+Unfortunately, this was also unsuccessful, so my only fix was to go slower and limit the inputs.</p>
+
+<h4 id="mouse-positioning">Mouse Positioning</h4>
+<p>There is actually no way to know where the mouse is currently located on the device. The solution to work around this is to move the mouse to the very top left and call this location (0,0). From there on out, we can access different locations using coordinates.</p>
+
+<h4 id="pathfinding">Pathfinding</h4>
+<p>To move the mouse between points, we need pathfinding. Because this isn’t trivial in bash, I implemented a simple approach:</p>
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>    <span class="k">while</span> <span class="o">[</span> <span class="s2">"</span><span class="nv">$CURRENT_X</span><span class="s2">"</span> <span class="nt">-ne</span> <span class="s2">"</span><span class="nv">$JUMP_X</span><span class="s2">"</span> <span class="o">]</span> <span class="o">||</span> <span class="o">[</span> <span class="s2">"</span><span class="nv">$CURRENT_Y</span><span class="s2">"</span> <span class="nt">-ne</span> <span class="s2">"</span><span class="nv">$JUMP_Y</span><span class="s2">"</span> <span class="o">]</span><span class="p">;</span> <span class="k">do
+        if</span> <span class="o">[[</span> <span class="nv">$CURRENT_X</span> <span class="nt">-lt</span> <span class="nv">$JUMP_X</span> <span class="o">]]</span><span class="p">;</span> <span class="k">then
+            </span>move_right <span class="nv">$MOVE_DISTANCE</span>
+        <span class="k">fi
+        if</span> <span class="o">[[</span> <span class="nv">$CURRENT_X</span> <span class="nt">-gt</span> <span class="nv">$JUMP_X</span> <span class="o">]]</span><span class="p">;</span> <span class="k">then
+            </span>move_left <span class="nv">$MOVE_DISTANCE</span>
+        <span class="k">fi
+        if</span> <span class="o">[[</span> <span class="nv">$CURRENT_Y</span> <span class="nt">-lt</span> <span class="nv">$JUMP_Y</span> <span class="o">]]</span><span class="p">;</span> <span class="k">then
+            </span>move_down <span class="nv">$MOVE_DISTANCE</span>
+        <span class="k">fi
+        if</span> <span class="o">[[</span> <span class="nv">$CURRENT_Y</span> <span class="nt">-gt</span> <span class="nv">$JUMP_Y</span> <span class="o">]]</span><span class="p">;</span> <span class="k">then
+            </span>move_up <span class="nv">$MOVE_DISTANCE</span>
+        <span class="k">fi
+    done</span>
+</code></pre></div></div>
+<p>This works but breaks for complex patterns like connecting 1 and 8, potentially touching other points.</p>
+
+<h4 id="random-phone-resets">Random Phone Resets</h4>
+<p>Some devices reboot during bruteforcing. My tool handles this by pausing at a set attempt count using the <code class="language-plaintext highlighter-rouge">SHUTDOWN_AT</code> variable.</p>
+
+<h4 id="feedback-limitations">Feedback Limitations</h4>
+<p>We can’t get feedback through HID alone to know when we’ve succeeded. Existing products use a sensor taped onto the device to measure brightness. Other solutions would be to just film the device or create a picture after each attempt and process the image.</p>
+
+<h3 id="future-work">Future Work</h3>
+<p>Raspbian actually also has <strong>ConfigFS</strong> support, so my script can be run on a Raspberry Pi. This same Raspberry Pi can be used to drive stepper motors that automatically perform a factory reset on the device. I have experimented on this but did not create a running prototype. Maybe in another blog post…</p>
+
+<h2 id="sources">Sources</h2>
+<div class="footnotes" role="doc-endnotes">
+  <ol>
+    <li id="fn:frp-bypass">
+      <p><a href="https://blog-cyber.riskeco.com/en/analysis-of-samsung-frp-bypass/">Riskeco: Analysis of a Samsung FRP Bypass</a> <a href="#fnref:frp-bypass" class="reversefootnote" role="doc-backlink">&#8617;</a></p>
+    </li>
+    <li id="fn:hid-specs">
+      <p><a href="https://usb.org/sites/default/files/hut1_4.pdf">usb.org HID Protocol Specification</a> <a href="#fnref:hid-specs" class="reversefootnote" role="doc-backlink">&#8617;</a></p>
+    </li>
+    <li id="fn:hid-gadget-driver">
+      <p><a href="https://www.kernel.org/doc/html/latest/usb/gadget_hid.html">kernel.org HID Gadget Documentation</a> <a href="#fnref:hid-gadget-driver" class="reversefootnote" role="doc-backlink">&#8617;</a></p>
+    </li>
+    <li id="fn:hid-sample">
+      <p><a href="https://github.com/qlyoung/keyboard-gadget/blob/master/gadget-setup.sh">HID Keyboard Gadget Sample by dlyoung</a> <a href="#fnref:hid-sample" class="reversefootnote" role="doc-backlink">&#8617;</a></p>
+    </li>
+    <li id="fn:kernel-gadget-api">
+      <p><a href="https://www.kernel.org/doc/html/v5.0/driver-api/usb/gadget.html">kernel.org USB Gadget Driver Documentation</a> <a href="#fnref:kernel-gadget-api" class="reversefootnote" role="doc-backlink">&#8617;</a></p>
+    </li>
+    <li id="fn:usb-gadget-tool">
+      <p><a href="https://github.com/tejado/android-usb-gadget">Android USB Gadget Github Repo</a> <a href="#fnref:usb-gadget-tool" class="reversefootnote" role="doc-backlink">&#8617;</a></p>
+    </li>
+    <li id="fn:pin-bruteforce-repo">
+      <p><a href="https://github.com/urbanadventurer/Android-PIN-Bruteforce">The Android PIN Bruteforce Github Repo</a> <a href="#fnref:pin-bruteforce-repo" class="reversefootnote" role="doc-backlink">&#8617;</a></p>
+    </li>
+    <li id="fn:iphone-brute">
+      <p><a href="https://cve.mitre.org/cgi-bin/cvename.cgi?name=CVE-2014-4451">Mitre CVE-2014-4451</a> <a href="#fnref:iphone-brute" class="reversefootnote" role="doc-backlink">&#8617;</a></p>
+    </li>
+    <li id="fn:all-pattern-repo">
+      <p><a href="https://github.com/0xE0-rng/AndroidPatternLock/tree/50eac641818bfb03b1a102c39b4e3c71dafac1bd">My AndroidPatternLock Fork</a> <a href="#fnref:all-pattern-repo" class="reversefootnote" role="doc-backlink">&#8617;</a></p>
+    </li>
+    <li id="fn:pattern-frequency">
+      <p><a href="https://web.archive.org/web/20230527233502/http://www.usablesecurity.net/USEC/NDSS/wp-content/uploads/2018/03/01-on-user-choice-for-android-unlock-patterns.pdf">Loge, Marte et al: On User Choice for Android Unlock Patterns</a> <a href="#fnref:pattern-frequency" class="reversefootnote" role="doc-backlink">&#8617;</a></p>
+    </li>
+  </ol>
+</div>]]></content><author><name>0xE0_rng</name></author><summary type="html"><![CDATA[Unfortunately, my aunt died recently and left behind a perfectly good Samsung Galaxy S7 FE tablet. Unfortunately (or fortunately for you, the interested reader), we did not know the password for the device, which left us with one option: Factory Reset.]]></summary></entry></feed>
