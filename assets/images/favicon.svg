@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- Simple notebook favicon matching dark theme -->
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" width="64" height="64">
+  <!-- Notebook cover -->
+  <rect x="8" y="8" width="48" height="48" rx="6" ry="6" fill="#2d2d2d" stroke="#ffffff" stroke-width="2"/>
+  <!-- Binding rings -->
+  <rect x="14" y="14" width="6" height="10" rx="1" ry="1" fill="#5a5a5a"/>
+  <rect x="14" y="27" width="6" height="10" rx="1" ry="1" fill="#5a5a5a"/>
+  <rect x="14" y="40" width="6" height="10" rx="1" ry="1" fill="#5a5a5a"/>
+  <!-- Notebook lines -->
+  <line x1="24" y1="20" x2="48" y2="20" stroke="#999999" stroke-width="2"/>
+  <line x1="24" y1="30" x2="48" y2="30" stroke="#999999" stroke-width="2"/>
+  <line x1="24" y1="40" x2="48" y2="40" stroke="#999999" stroke-width="2"/>
+</svg>
